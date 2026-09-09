@@ -4,12 +4,16 @@
   "description": "Local tmux monitor for AI coding sessions",
   "type": "module",
   "private": true,
-  "bin": { "tmux-ai-monitor": "./bin/tmux-ai-monitor.mjs" },
-  "engines": { "node": ">=22" },
+  "bin": {
+    "tmux-ai-monitor": "./bin/tmux-ai-monitor.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "start": "node bin/tmux-ai-monitor.mjs watch",
     "demo": "node bin/tmux-ai-monitor.mjs watch --demo",
     "test": "node --test",
-    "check": "node --check bin/tmux-ai-monitor.mjs && node --check src/scanner.mjs && node --check src/display.mjs && node --check src/integration.mjs && node --check src/tracker.mjs && node --check src/accounts.mjs && node --check src/codex-usage.mjs && node --check src/usage-cache.mjs && node --check src/usage-gauge.mjs"
+    "check": "node --check bin/tmux-ai-monitor.mjs && node --check src/scanner.mjs && node --check src/display.mjs && node --check src/integration.mjs && node --check src/tracker.mjs && node --check src/accounts.mjs && node --check src/codex-usage.mjs && node --check src/usage-cache.mjs && node --check src/usage-gauge.mjs && node --check src/claude-usage.mjs"
   }
 }

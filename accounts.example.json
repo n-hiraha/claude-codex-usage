@@ -11,6 +11,12 @@
       "provider": "codex",
       "codexHome": "/absolute/path/to/work-codex-home",
       "expectedEmail": "work@example.com"
+    },
+    {
+      "name": "claude",
+      "provider": "claude",
+      "claudeHome": "/absolute/path/to/claude-home",
+      "expectedEmail": "claude@example.com"
     }
   ]
 }

@@ -2,6 +2,7 @@ import { readFile, realpath, stat } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, resolve } from 'node:path';
 import { readCodexUsage } from './codex-usage.mjs';
+import { readClaudeUsage } from './claude-usage.mjs';
 import { clean } from './display.mjs';
 
 export async function loadAccounts(file, env = process.env) {
@@ -16,34 +17,41 @@ export async function loadAccounts(file, env = process.env) {
   const result = [];
   for (const account of config.accounts) {
     if (!account || typeof account.name !== 'string' || !account.name.trim() || account.name.length > 80 || names.has(account.name)) throw new Error('アカウント名は重複しない1〜80文字で指定してください。');
-    if (account.provider !== 'codex') throw new Error('アカウント別usageは現在 provider: codex に対応しています。');
-    if (typeof account.codexHome !== 'string' || !isAbsolute(account.codexHome)) throw new Error('codexHomeは絶対パスで指定してください。');
+    const provider = account.provider;
+    if (provider !== 'codex' && provider !== 'claude') throw new Error('providerにはcodexまたはclaudeを指定してください。');
+    const homeKey = provider === 'claude' ? 'claudeHome' : 'codexHome';
+    if (typeof account[homeKey] !== 'string' || !isAbsolute(account[homeKey])) throw new Error(`${homeKey}は絶対パスで指定してください。`);
     if (account.expectedEmail !== undefined && (typeof account.expectedEmail !== 'string' || !account.expectedEmail.trim())) throw new Error('expectedEmailには空でない文字列を指定してください。');
-    const home = await realpath(account.codexHome).catch(() => resolve(account.codexHome));
-    if (homes.has(home)) throw new Error('同じcodexHomeが重複しています。アカウントごとに別のディレクトリを指定してください。');
+    const home = await realpath(account[homeKey]).catch(() => resolve(account[homeKey]));
+    const homeIdentity = `${provider}:${home}`;
+    if (homes.has(homeIdentity)) throw new Error(`同じ${homeKey}が重複しています。アカウントごとに別のディレクトリを指定してください。`);
     names.add(account.name);
-    homes.add(home);
-    result.push({ name: account.name, provider: 'codex', codexHome: home, ...(account.expectedEmail ? { expectedEmail: account.expectedEmail } : {}) });
+    homes.add(homeIdentity);
+    result.push({ name: account.name, provider, [homeKey]: home, ...(account.expectedEmail ? { expectedEmail: account.expectedEmail } : {}) });
   }
   return result;
 }
 
-export async function collectUsage(accounts, { read = readCodexUsage } = {}) {
+export async function collectUsage(accounts, { read = readCodexUsage, readClaude = readClaudeUsage } = {}) {
   const results = [];
   // Serial on purpose: avoid concurrent credential refreshes in shared stores.
   for (const account of accounts) {
     try {
-      const data = await read({ codexHome: account.codexHome });
+      const provider = account.provider || 'codex';
+      const reader = provider === 'claude' ? readClaude : read;
+      const homeKey = provider === 'claude' ? 'claudeHome' : 'codexHome';
+      const data = await reader({ [homeKey]: account[homeKey] });
       if (account.expectedEmail && account.expectedEmail.toLowerCase() !== data.identity?.email?.toLowerCase()) {
-        results.push({ name: account.name, provider: account.provider, error: 'ログイン中のメールアドレスがexpectedEmailと一致しません。usageを表示しません。' });
-      } else results.push({ name: account.name, provider: account.provider, ...data });
+        results.push({ name: account.name, provider, error: 'ログイン中のメールアドレスがexpectedEmailと一致しません。usageを表示しません。' });
+      } else results.push({ name: account.name, provider, ...data });
     } catch {
-      results.push({ name: account.name, provider: account.provider, error: '取得できません。Codex CLI・指定ホームのログイン状態・ネットワークを確認してください。' });
+      const providerName = (account.provider || 'codex') === 'claude' ? 'Claude' : 'Codex';
+      results.push({ name: account.name, provider: account.provider || 'codex', error: `取得できません。${providerName} CLI・指定ホームのログイン状態・ネットワークを確認してください。` });
     }
   }
   const warnings = [];
-  const emails = results.map(item => item.identity?.email?.toLowerCase()).filter(Boolean);
-  if (new Set(emails).size !== emails.length) warnings.push('同じメールアドレスのログインが複数あります。別枠のusageとは限らないため合算しません。');
+  const identities = results.map(item => item.identity?.email && `${item.provider || 'codex'}:${item.identity.email.toLowerCase()}`).filter(Boolean);
+  if (new Set(identities).size !== identities.length) warnings.push('同じプロバイダー・メールアドレスのログインが複数あります。別枠のusageとは限らないため合算しません。');
   return { scannedAt: new Date().toISOString(), accounts: results, warnings };
 }
 

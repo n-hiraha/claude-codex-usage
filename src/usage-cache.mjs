@@ -14,7 +14,7 @@ function quotaOnly(result) {
   })) };
 }
 
-export async function cachedUsage(accounts, { directory = defaultCacheDirectory(), now = Date.now(), ttlMs = 60000, fetchUsage = collectUsage } = {}) {
+export async function cachedUsage(accounts, { directory = defaultCacheDirectory(), now = Date.now(), ttlMs = accounts.some(a => a.provider === 'claude') ? 300000 : 60000, fetchUsage = collectUsage } = {}) {
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const key = createHash('sha256').update(JSON.stringify(accounts)).digest('hex').slice(0, 24);
   const path = join(directory, `${key}.json`);

@@ -11,7 +11,7 @@ const help = `tmux-ai-monitor — ローカルのAIセッションを見渡す
   attention [--json]    承認待ち・入力待ちを表示
   watch                2秒ごとに更新（1〜9で移動、qで終了）
   statusline           tmuxのstatus-right用の1行
-  usage-statusline     tmux用の使用量ゲージ（60秒キャッシュ）
+  usage-statusline     tmux用の使用量ゲージ（利用枠キャッシュ）
   usage [--accounts FILE] アカウント別の利用枠・トークン使用量
   jump %ID             指定ペインに移動（tmux内で実行）
   setup tmux           設定を標準出力へ生成
@@ -47,13 +47,13 @@ async function main() {
   if (command === 'usage-statusline') {
     const width = Number(options.width ?? 100);
     if (!Number.isInteger(width) || width < 20 || width > 10000) throw new Error('--widthは20〜10000の整数で指定してください。');
-    const { loadAccounts, demoUsage } = await import('../src/accounts.mjs');
-    const { cachedUsage } = await import('../src/usage-cache.mjs');
-    const { renderUsageGauge } = await import('../src/usage-gauge.mjs');
     try {
+      const { loadAccounts, demoUsage } = await import('../src/accounts.mjs');
+      const { cachedUsage } = await import('../src/usage-cache.mjs');
+      const { renderUsageGauge } = await import('../src/usage-gauge.mjs');
       const result = options.demo ? demoUsage() : await cachedUsage(await loadAccounts(options.accounts));
-      console.log(result.loading ? 'Codex usage 取得中…' : renderUsageGauge(result, { width, stale: result.stale }));
-    } catch { console.log('Codex usage 取得不可 · usage コマンドで確認'); }
+      console.log(result.loading ? 'AI usage 取得中…' : renderUsageGauge(result, { width, stale: result.stale }));
+    } catch { console.log('AI usage 取得不可 · usage コマンドで確認'); }
     return;
   }
   if (command === 'usage') {

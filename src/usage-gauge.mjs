@@ -24,7 +24,8 @@ function shorten(value, width) {
 
 function bucket(account) {
   const limits = account?.limits ?? [];
-  return limits.find(limit => limit?.id === 'codex') ?? limits.find(limit => !/spark/i.test(String(limit?.id ?? ''))) ?? null;
+  const id = account?.provider === 'claude' ? 'claude' : 'codex';
+  return limits.find(limit => limit?.id === id) ?? limits.find(limit => !/spark/i.test(String(limit?.id ?? ''))) ?? null;
 }
 
 function durationLabel(minutes) {
@@ -60,23 +61,25 @@ function colorFor(account, windows) {
 }
 
 function accountLabel(account) {
+  const provider = account?.provider === 'claude' ? 'Claude' : 'Codex';
   const name = shorten(tmuxText(account?.name || 'default'), 12);
-  return name === 'default' ? 'Codex' : `Codex ${name}`;
+  return name === 'default' || name.toLowerCase() === provider.toLowerCase() ? provider : `${provider} ${name}`;
 }
 
 function renderAccount(account, { now }) {
   const limit = bucket(account);
   const windows = [limit?.primary, limit?.secondary].filter(Boolean);
   const label = accountLabel(account);
-  if (account?.error || !windows.length) return { variants: [`${label} 利用枠不明`, 'Codex 不明'], color: COLORS.unknown };
+  if (account?.error || !windows.length) return { variants: [`${label} 利用枠不明`, `${account?.provider === 'claude' ? 'Claude' : 'Codex'} 不明`], color: COLORS.unknown };
   const variants = [];
   for (const [size, reset] of [[10, true], [6, true], [6, false], [4, false]]) {
     variants.push(`${label} ${windows.map(window => windowText(window, now, size, reset)).join(' / ')}`);
   }
   if (windows.length > 1) variants.push(`${label} ${windowText(windows[0], now, 6, true)} +1枠`);
   variants.push(`${label} ${windowText(windows[0], now, 4, false)}`);
-  variants.push(`Codex ${windowText(windows[0], now, 4, false)}`);
-  variants.push('Codex 幅不足');
+  const provider = account?.provider === 'claude' ? 'Claude' : 'Codex';
+  variants.push(`${provider} ${windowText(windows[0], now, 4, false)}`);
+  variants.push(`${provider} 幅不足`);
   return { variants, color: colorFor(account, windows) };
 }
 

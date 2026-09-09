@@ -8,6 +8,20 @@ import { cachedUsage } from '../src/usage-cache.mjs';
 const accounts = [{ name: 'test', provider: 'codex', codexHome: '/tmp/example' }];
 const data = { scannedAt: new Date(1000).toISOString(), accounts: [{ name: 'test', provider: 'codex', identity: { email: 'private@example.com' }, summary: { lifetimeTokens: 1000 }, limits: [{ id: 'codex', primary: { usedPercent: 9 } }] }] };
 
+test('Claude profiles use a five-minute polling interval', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'monitor-cache-'));
+  const profiles = [{ name: 'claude', provider: 'claude', claudeHome: '/tmp/example' }];
+  let calls = 0;
+  const fetchUsage = async () => { calls++; return { ...data, accounts: [{ name: 'claude', provider: 'claude', limits: [] }] }; };
+  try {
+    await cachedUsage(profiles, { directory, now: 1000, fetchUsage });
+    await cachedUsage(profiles, { directory, now: 62000, fetchUsage });
+    assert.equal(calls, 1);
+    await cachedUsage(profiles, { directory, now: 302000, fetchUsage });
+    assert.equal(calls, 2);
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
 test('quota cache reuses fresh values, refreshes expired values and omits identity', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'monitor-cache-'));
   let calls = 0;

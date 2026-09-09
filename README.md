@@ -1,6 +1,6 @@
 # tmux-ai-monitor
 
-tmuxで動かしているClaude Code・Codex・Geminiの状態を一覧できるCLIです。承認待ちの確認、ペインへの移動、複数Codexアカウントの利用状況の表示に対応しています。
+tmuxで動かしているClaude Code・Codex・Geminiの状態を一覧できるCLIです。承認待ちの確認、ペインへの移動、複数Codex・Claudeアカウントの利用状況の表示に対応しています。
 
 ## 起動
 
@@ -28,7 +28,7 @@ node bin/tmux-ai-monitor.mjs jump %3
 
 `--bell`は、ライブ表示中に新たな承認待ち、または応答中・ツール実行から入力待ちへの変化を検出したとき、ターミナルベルを鳴らします。起動時の一覧や同じ状態のままの更新では鳴らしません。実際に音が鳴るかはターミナルの設定によります。状態の経過時間は監視開始後の観測時間です。履歴は保存しません。
 
-## アカウント別usage（Codex）
+## アカウント別usage（Codex・Claude）
 
 ```sh
 # 2アカウントのサンプル表示（ネットワーク接続なし）
@@ -49,10 +49,10 @@ node bin/tmux-ai-monitor.mjs usage --accounts accounts.local.json --json
 - 各`codexHome`は、そのアカウントでログイン済みのCodex用ディレクトリを指定してください。`~`の展開は行わないので絶対パスを使います。
 - `expectedEmail`は任意です。指定したメールとログイン中のアカウントが異なれば、取り違えを避けるためusageを表示しません。
 - 同じホームの重複は拒否します。同じメールが複数のホームから返された場合も警告し、値を合算しません。
-- モニター自身は認証ファイルを読み取りません。指定ホームで`codex app-server`を起動し、アカウント情報とusageの読み取りだけを要求します。会話・ターン作成やログイン切り替えは行いません。Codex側は通常の起動処理や認証更新に伴いホーム内のファイルを更新する場合があります。
+- Codexの取得ではモニター自身は認証ファイルを読み取りません。指定ホームで`codex app-server`を起動し、アカウント情報とusageの読み取りだけを要求します。会話・ターン作成やログイン切り替えは行いません。Codex側は通常の起動処理や認証更新に伴いホーム内のファイルを更新する場合があります。
 - このコマンドはCodex経由でサービスに接続します。tmux監視コマンドはローカルだけで動作します。
 - 古いCLIやAPIキーのみの認証など、取得できない項目は不明・取得不可として扱います。0%とは表示しません。
-- アカウントとペインの対応づけは未実装です。Claude・Geminiのアカウント別利用枠、ログイン切り替え履歴、別Macのusageの集約も未対応です。
+- アカウントとペインの対応づけは未実装です。Geminiのアカウント別利用枠、ログイン切り替え履歴、別Macのusageの集約も未対応です。
 - `accounts.local.json`はGit対象外です。公開用の設定例には架空のパスとメールだけを載せています。
 
 ## tmuxバーへの組み込み
@@ -68,7 +68,7 @@ tmux source-file "$PWD/tmux-ai-monitor.conf"
 
 最下部の2行目にCodexの使用量ゲージ・残り％・リセットまでの時間が表示されます。塗られた部分が使用済みです。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-interval`、`prefix + a`を設定します。既存の2行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
 
-ゲージは通常60秒に一度Codexへ取得し、表示にはキャッシュを利用します。キャッシュにはアカウントの表示名と利用枠だけを保存し、メールアドレスやトークン履歴は保存しません。保存先は`$XDG_CACHE_HOME/tmux-ai-monitor`、未指定なら`~/.cache/tmux-ai-monitor`です。再取得中の古い値には更新待ちを示す表示が付きます。取得できない場合に0%と表示することはありません。
+ゲージはCodexのみなら60秒、Claudeを含む設定では5分に一度取得し、表示にはキャッシュを利用します。キャッシュにはアカウントの表示名と利用枠だけを保存し、メールアドレスやトークン履歴は保存しません。保存先は`$XDG_CACHE_HOME/tmux-ai-monitor`、未指定なら`~/.cache/tmux-ai-monitor`です。再取得中の古い値には更新待ちを示す表示が付きます。取得できない場合に0%と表示することはありません。
 
 複数アカウントをバーに載せる場合は、生成した設定内の`usage-statusline`コマンドへ`--accounts /absolute/path/to/accounts.local.json`を追加してください。画面幅に収まらない分は省略数を表示します。
 
@@ -104,4 +104,12 @@ RUN_TMUX_TESTS=1 node --test test/tmux.integration.test.mjs
 
 `src/scanner.mjs`がtmuxとOSプロセスを収集し、`src/display.mjs`が表示、`src/integration.mjs`が設定生成とペイン移動を担当します。
 
-Codex usageは合成レスポンスによるプロトコルテストと、Codex CLI 0.153.4の未ログインの一時ホームで接続確認を実施しています。macOSの実環境でtmux内の8セッションの検出、および1アカウントの利用枠・リセット時刻・トークン使用量の取得も確認しました。複数アカウントの同時運用は合成レスポンスでの検証までです。
+Codex usageは合成レスポンスによるプロトコルテストと、Codex CLI 0.153.4の未ログインの一時ホームで接続確認を実施しています。macOSの実環境でtmux内の8セッションの検出、Codexの2アカウントとClaudeの1アカウントの利用枠取得・ゲージ表示を確認しました。
+
+## Claudeの利用枠
+
+設定に`provider: "claude"`と`claudeHome`（Claude Codeの設定ディレクトリの絶対パス）を追加すると、Claude.aiの5時間枠と週次枠を表示します。`expectedEmail`でアカウントの取り違えを検出できます。Claude Codeにサブスクリプションアカウントでログインしている必要があります。APIキーの使用量・請求額は対象外です。
+
+認証状態は`claude auth status --json`で確認します。macOSでは選択したプロファイルのClaude Code用Keychain項目、その他の環境ではそのホームの`.credentials.json`にあるOAuth認証情報を使用します。認証トークンはメモリ内でのみ扱い、固定の`https://api.anthropic.com/api/oauth/usage`へ送信します。トークンの保存・表示・自動更新はしません。認証が切れた場合はClaude Codeでログインし直してください。
+
+取得先はインストール済みClaude Codeが使用している内部エンドポイントで、外部向けの安定したAPIではありません。Claude側の変更により取得できなくなる可能性があります。Claudeの[公式ステータスライン仕様](https://code.claude.com/docs/en/statusline#rate-limit-usage)でも5時間枠・週次枠の使用率とリセット時刻が説明されています。

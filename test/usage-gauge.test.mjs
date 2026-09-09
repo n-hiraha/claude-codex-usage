@@ -39,3 +39,19 @@ test('small widths collapse accounts and sanitize control/format injection', () 
   const plain = output.replace(/#\[[^\]]*\]/g, '');
   assert.equal((plain.match(/\[/g) || []).length, (plain.match(/\]/g) || []).length);
 });
+
+test('renders Claude labels and selects the Claude limit bucket', () => {
+  const output = renderUsageGauge({ accounts: [{ name: 'default', provider: 'claude', limits: [
+    { id: 'codex', primary: { usedPercent: 99, windowDurationMins: 60 } },
+    { id: 'claude', primary: { usedPercent: 20, windowDurationMins: 300 } },
+  ] }] }, { now: 1759481600000 });
+  assert.match(output, /Claude/);
+  assert.match(output, /残80%/);
+  assert.doesNotMatch(output, /残1%/);
+});
+
+test('Claude errors remain labeled Claude when quota is unknown', () => {
+  const output = renderUsageGauge({ accounts: [{ name: 'default', provider: 'claude', error: 'failed' }] });
+  assert.match(output, /Claude/);
+  assert.doesNotMatch(output, /Codex/);
+});
