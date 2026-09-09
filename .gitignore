@@ -6,3 +6,4 @@ accounts.local.json
 tmux-ai-monitor.conf
 .env
 .env.*
+dist/
