@@ -1,6 +1,6 @@
 # tmux-ai-monitor
 
-tmuxで動かしているClaude Code・Codex・Geminiを見渡す、ローカル専用のCLIです。[marmonitor](https://github.com/mjjo16/marmonitor)の用途を参考にした独立実装の初版です。
+tmuxで動かしているClaude Code・Codex・Geminiの状態を一覧できるCLIです。承認待ちの確認、ペインへの移動、複数Codexアカウントの利用状況の表示に対応しています。
 
 ## 起動
 
