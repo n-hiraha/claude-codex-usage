@@ -5,7 +5,7 @@ import { clean, demoScan, renderStatus, statusline } from '../src/display.mjs';
 import { tmuxConfig, jumpToPane } from '../src/integration.mjs';
 import { SessionTracker, filterSessions } from '../src/tracker.mjs';
 
-const help = `tmux-ai-monitor — ローカルのAIセッションを見渡す
+const help = `claude-codex-usage — Claude・Codexの使用量とリセット日時
 
   status [--json]       一覧を表示
   attention [--json]    承認待ち・入力待ちを表示
@@ -23,6 +23,8 @@ const help = `tmux-ai-monitor — ローカルのAIセッションを見渡す
   --agent NAME         claude / codex / gemini で絞り込み
   --attention          承認待ち・入力待ちだけ表示
   --bell               watchで新しい承認待ち・完了をベル通知
+  --provider NAME      usage-statuslineでcodex / claudeを表示
+  --split-providers    setup tmuxでCodex・Claudeを別の行に表示
 
 追加パッケージ・APIキー不要。状態判定は画面からの推定です。`;
 
@@ -33,8 +35,8 @@ async function main() {
   const positional = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (['--demo', '--json', '--attention', '--bell', '--compact'].includes(arg)) options[arg.slice(2)] = true;
-    else if (['--socket', '--client', '--interval', '--agent', '--accounts', '--width'].includes(arg)) {
+    if (['--demo', '--json', '--attention', '--bell', '--compact', '--split-providers'].includes(arg)) options[arg.slice(2)] = true;
+    else if (['--socket', '--client', '--interval', '--agent', '--accounts', '--width', '--provider'].includes(arg)) {
       if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error(`${arg} の値が必要です。`);
       options[arg.slice(2)] = args[++i];
     } else if (arg.startsWith('-')) throw new Error(`不明なオプション: ${arg}`);
@@ -43,6 +45,7 @@ async function main() {
   if (['help', '--help', '-h'].includes(command)) return console.log(help);
   if (options.agent && !['claude', 'codex', 'gemini'].includes(options.agent)) throw new Error('--agent は claude / codex / gemini を指定してください。');
   if (options.bell && command !== 'watch') throw new Error('--bell は watch で使用してください。');
+  if (options.provider && !['codex', 'claude'].includes(options.provider)) throw new Error('--provider は codex / claude を指定してください。');
   let attention = command === 'attention' || Boolean(options.attention);
   if (command === 'usage-statusline') {
     const width = Number(options.width ?? 100);
@@ -52,7 +55,8 @@ async function main() {
       const { cachedUsage } = await import('../src/usage-cache.mjs');
       const { renderUsageGauge } = await import('../src/usage-gauge.mjs');
       const result = options.demo ? demoUsage() : await cachedUsage(await loadAccounts(options.accounts));
-      console.log(result.loading ? 'AI usage 取得中…' : renderUsageGauge(result, { width, stale: result.stale }));
+      const selected = options.provider ? { ...result, accounts: result.accounts.filter(account => account.provider === options.provider) } : result;
+      console.log(result.loading ? 'AI usage 取得中…' : !selected.accounts.length ? `${options.provider || 'AI'} アカウント未設定` : renderUsageGauge(selected, { width, stale: result.stale }));
     } catch { console.log('AI usage 取得不可 · usage コマンドで確認'); }
     return;
   }
@@ -66,7 +70,7 @@ async function main() {
   }
   if (command === 'setup') {
     if (positional.length !== 1 || positional[0] !== 'tmux') throw new Error('使い方: setup tmux');
-    return process.stdout.write(tmuxConfig(fileURLToPath(import.meta.url), process.execPath, options.socket));
+    return process.stdout.write(tmuxConfig(fileURLToPath(import.meta.url), process.execPath, options.socket, { accounts: options.accounts, splitProviders: options['split-providers'] }));
   }
   if (command === 'jump') {
     if (options.demo) throw new Error('デモから実際のペインには移動できません。');

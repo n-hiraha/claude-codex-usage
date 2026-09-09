@@ -37,11 +37,10 @@ function durationLabel(minutes) {
 
 function countdown(resetsAt, now) {
   if (!Number.isFinite(resetsAt)) return '↻?';
-  const seconds = Math.max(0, resetsAt * 1000 - now);
-  if (seconds < 60_000) return '↻now';
-  if (seconds < 3_600_000) return `↻${Math.ceil(seconds / 60_000)}m`;
-  if (seconds < 86_400_000) return `↻${Math.ceil(seconds / 3_600_000)}h`;
-  return `↻${Math.ceil(seconds / 86_400_000)}d`;
+  const date = new Date(resetsAt * 1000);
+  if (!Number.isFinite(date.getTime())) return '↻?';
+  const clock = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  return `↻${date.getMonth() + 1}/${date.getDate()} ${clock}${resetsAt * 1000 <= now ? ' 更新待ち' : ''}`;
 }
 
 function windowText(window, now, size = 10, reset = true) {
@@ -49,9 +48,9 @@ function windowText(window, now, size = 10, reset = true) {
   const used = Number.isFinite(window.usedPercent) ? Math.max(0, Math.min(100, window.usedPercent)) : null;
   const fill = used === null ? 0 : Math.round(used / 100 * size);
   const gauge = used === null ? '[不明]' : `[${'━'.repeat(fill)}${'·'.repeat(size - fill)}]`;
-  const remaining = used === null ? '残?' : `残${Math.round(100 - used)}%`;
+  const usage = used === null ? '使用?' : `使用${Math.round(used)}%`;
   const duration = durationLabel(window.windowDurationMins);
-  return `${duration ? `${duration} ` : ''}${gauge} ${remaining}${reset ? ` ${countdown(window.resetsAt, now)}` : ''}`;
+  return `${duration ? `${duration} ` : ''}${gauge} ${usage}${reset ? ` ${countdown(window.resetsAt, now)}` : ''}`;
 }
 
 function colorFor(account, windows) {
@@ -68,14 +67,21 @@ function accountLabel(account) {
 
 function renderAccount(account, { now }) {
   const limit = bucket(account);
-  const windows = [limit?.primary, limit?.secondary].filter(Boolean);
+  const isClaude = account?.provider === 'claude';
+  const fable = isClaude ? account?.limits?.find(item => item.id === 'claude_fable') : null;
+  const groups = isClaude ? [{ name: 'All models', limit }, { name: 'Fable', limit: fable }] : [{ name: '', limit }];
+  const windows = groups.flatMap(group => [group.limit?.primary, group.limit?.secondary].filter(Boolean));
   const label = accountLabel(account);
   if (account?.error || !windows.length) return { variants: [`${label} 利用枠不明`, `${account?.provider === 'claude' ? 'Claude' : 'Codex'} 不明`], color: COLORS.unknown };
   const variants = [];
   for (const [size, reset] of [[10, true], [6, true], [6, false], [4, false]]) {
-    variants.push(`${label} ${windows.map(window => windowText(window, now, size, reset)).join(' / ')}`);
+    const text = groups.map(group => {
+      const values = [group.limit?.primary, group.limit?.secondary].filter(Boolean);
+      return `${group.name ? `${group.name} ` : ''}${values.length ? values.map(window => windowText(window, now, size, reset)).join(' / ') : '未提供'}`;
+    }).join(' | ');
+    variants.push(`${label} ${text}`);
   }
-  if (windows.length > 1) variants.push(`${label} ${windowText(windows[0], now, 6, true)} +1枠`);
+  if (windows.length > 1) variants.push(`${label} ${isClaude ? 'All models ' : ''}${windowText(windows[0], now, 6, true)} +${windows.length - 1}枠`);
   variants.push(`${label} ${windowText(windows[0], now, 4, false)}`);
   const provider = account?.provider === 'claude' ? 'Claude' : 'Codex';
   variants.push(`${provider} ${windowText(windows[0], now, 4, false)}`);

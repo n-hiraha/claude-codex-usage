@@ -1,8 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { homedir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
-import { readClaudeUsage, normalizeClaudeLimits, claudeKeychainService } from '../src/claude-usage.mjs';
+import { readClaudeUsage, normalizeClaudeLimits, claudeKeychainService, resolveClaudeExecutable } from '../src/claude-usage.mjs';
+
+test('finds Claude beside Node when tmux PATH omits the Node install directory', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'claude-path-'));
+  try {
+    const cli = join(dir, 'claude');
+    await writeFile(cli, '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+    assert.equal(await resolveClaudeExecutable({ searchPath: '/nonexistent-tmux-path', nodePath: join(dir, 'node') }), cli);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 const token = JSON.stringify({ claudeAiOauth: { accessToken: 'synthetic-token' } });
 const account = { loggedIn: true, authMethod: 'claude.ai', email: 'test@example.com', orgId: 'test-org', subscriptionType: 'max' };
@@ -13,6 +23,19 @@ test('Claude windows preserve missing values instead of inventing zero', () => {
   assert.equal(limits[0].primary.usedPercent, null);
   assert.equal(limits[0].primary.resetsAt, null);
   assert.equal(limits[0].secondary, null);
+});
+
+test('All models and Fable use explicit scope even when Fable is not the active limit', () => {
+  const limits = normalizeClaudeLimits({ ...fixture, limits: [
+    { kind: 'weekly_scoped', group: 'weekly', percent: 63, resets_at: '2026-09-15T10:00:00Z', is_active: false, scope: { model: { id: null, display_name: 'Fable' }, surface: null } },
+    { kind: 'weekly_scoped', group: 'weekly', percent: 99, scope: { model: { display_name: 'Other' } } },
+  ] });
+  assert.equal(limits[0].name, 'All models');
+  assert.equal(limits[0].secondary.usedPercent, 45);
+  assert.equal(limits[1].name, 'Fable');
+  assert.equal(limits[1].secondary.usedPercent, 63);
+  assert.equal(limits[1].secondary.windowDurationMins, 10080);
+  assert.equal(normalizeClaudeLimits(fixture).length, 1);
 });
 
 test('credential stays in memory and only reaches the fixed Anthropic endpoint', async () => {

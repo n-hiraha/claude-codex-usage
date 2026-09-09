@@ -36,3 +36,11 @@ test('generated config includes absolute executable paths and popup', () => {
   assert.match(config, /display-popup/);
   assert.match(config, /'\/tmp\/a b\/monitor.mjs'/);
 });
+
+test('split provider rows retain the same absolute account configuration', () => {
+  const config = tmuxConfig('/tmp/monitor.mjs', '/usr/bin/node', undefined, { accounts: '/tmp/accounts.local.json', splitProviders: true });
+  assert.match(config, /set -g status 3/);
+  assert.match(config, /status-format\[1\].*--provider codex/);
+  assert.match(config, /status-format\[2\].*--provider claude/);
+  assert.equal((config.match(/--accounts '\/tmp\/accounts.local.json'/g) || []).length, 2);
+});

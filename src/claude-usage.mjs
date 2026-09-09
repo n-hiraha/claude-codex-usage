@@ -1,13 +1,24 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
+import { constants } from 'node:fs';
 import { homedir, userInfo } from 'node:os';
-import { resolve, join } from 'node:path';
+import { resolve, join, dirname, delimiter } from 'node:path';
 import { createHash } from 'node:crypto';
 
 const exec = promisify(execFile);
 const endpoint = 'https://api.anthropic.com/api/oauth/usage';
 const failure = message => Object.assign(new Error(message), { code: 'CLAUDE_USAGE_ERROR' });
+
+export async function resolveClaudeExecutable({ searchPath = process.env.PATH || '', nodePath = process.execPath } = {}) {
+  // tmux may have started before mise/nvm populated the interactive shell PATH.
+  const directories = [...searchPath.split(delimiter).filter(Boolean), dirname(nodePath), join(homedir(), '.local', 'bin')];
+  for (const directory of new Set(directories)) {
+    const candidate = join(directory, 'claude');
+    try { await access(candidate, constants.X_OK); return candidate; } catch { /* Try the next install location. */ }
+  }
+  return 'claude';
+}
 
 export function claudeKeychainService(claudeHome) {
   const home = resolve(claudeHome).normalize('NFC');
@@ -27,14 +38,30 @@ function windowOf(value, minutes) {
 }
 
 export function normalizeClaudeLimits(data) {
-  return [{ id: 'claude', name: 'Claude', primary: windowOf(data?.five_hour, 300), secondary: windowOf(data?.seven_day, 10080) }];
+  const rows = Array.isArray(data?.limits) ? data.limits : [];
+  const fromRow = (row, minutes) => row ? windowOf({ utilization: row.percent, resets_at: row.resets_at }, minutes) : null;
+  const limits = [{
+    id: 'claude', name: 'All models',
+    primary: windowOf(data?.five_hour, 300) ?? fromRow(rows.find(row => row?.kind === 'session' && !row.scope), 300),
+    secondary: windowOf(data?.seven_day, 10080) ?? fromRow(rows.find(row => row?.kind === 'weekly_all' && !row.scope), 10080),
+  }];
+  // is_active identifies the currently limiting window; false does not mean
+  // that this account has no quota. Bind by the explicit model scope instead.
+  const fable = rows.filter(row => row?.scope?.model?.display_name?.toLowerCase() === 'fable' && !row.scope.surface);
+  if (fable.length) limits.push({
+    id: 'claude_fable', name: 'Fable',
+    primary: fromRow(fable.find(row => row.group === 'session'), 300),
+    secondary: fromRow(fable.find(row => row.kind === 'weekly_scoped' && row.group === 'weekly'), 10080),
+  });
+  return limits;
 }
 
 // Access only the chosen Claude profile's credential, and send it only to
 // Anthropic's fixed HTTPS usage endpoint. Never return or persist the token.
-export async function readClaudeUsage({ claudeHome, runner = exec, read = readFile, fetchImpl = fetch, platform = process.platform } = {}) {
+export async function readClaudeUsage({ claudeHome, executable, runner = exec, read = readFile, fetchImpl = fetch, platform = process.platform } = {}) {
   if (typeof claudeHome !== 'string' || !claudeHome) throw failure('Claude home is required');
   const home = resolve(claudeHome);
+  const cli = executable || await resolveClaudeExecutable();
   const env = { ...process.env };
   delete env.CLAUDE_SECURESTORAGE_CONFIG_DIR;
   if (home === resolve(homedir(), '.claude')) delete env.CLAUDE_CONFIG_DIR;
@@ -43,7 +70,7 @@ export async function readClaudeUsage({ claudeHome, runner = exec, read = readFi
   for (const key of ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_OAUTH_TOKEN_FILE_DESCRIPTOR', 'ANTHROPIC_BASE_URL']) delete env[key];
   const auth = async () => {
     try {
-      const { stdout } = await runner('claude', ['auth', 'status', '--json'], { env, timeout: 5000, maxBuffer: 65536 });
+      const { stdout } = await runner(cli, ['auth', 'status', '--json'], { env, timeout: 5000, maxBuffer: 65536 });
       const data = JSON.parse(stdout);
       if (!data.loggedIn || data.authMethod !== 'claude.ai' || !data.email) throw failure('not signed in');
       return { email: data.email, orgId: data.orgId ?? null, planType: data.subscriptionType ?? null };
