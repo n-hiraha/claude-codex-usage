@@ -12,10 +12,11 @@ export function clean(value) {
 export function tmuxText(value) {
   return clean(value).replaceAll('#', '＃').replaceAll('%', '％');
 }
-export function statusline(sessions) {
+export function statusline(sessions, { compact = false } = {}) {
   if (!sessions.length) return 'AI · 0 sessions';
   const counts = Object.entries(names).filter(([key]) => sessions.some(s => s.agent === key))
     .map(([key, name]) => `${name} ${sessions.filter(s => s.agent === key).length}`).join(' · ');
+  if (compact) return `AI ${counts}`;
   const pills = sessions.slice(0, 5).map(s => {
     const phase = phases[s.phase] ?? phases.unknown;
     return `#[fg=${phase.color}]${phase.icon} ${tmuxText(s.paneId)} ${tmuxText(s.project).slice(0, 24)}#[default]`;

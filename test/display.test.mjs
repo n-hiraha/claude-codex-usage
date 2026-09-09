@@ -30,7 +30,9 @@ test('jump uses a stable pane ID and explicit client without shell execution', a
 
 test('generated config includes absolute executable paths and popup', () => {
   const config = tmuxConfig('/tmp/a b/monitor.mjs', '/usr/local/bin/node');
-  assert.match(config, /status-right/);
+  assert.match(config, /status-format\[1\]/);
+  assert.match(config, /usage-statusline/);
+  assert.doesNotMatch(config, /set -g status-right/);
   assert.match(config, /display-popup/);
   assert.match(config, /'\/tmp\/a b\/monitor.mjs'/);
 });

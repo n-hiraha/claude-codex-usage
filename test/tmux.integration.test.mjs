@@ -28,9 +28,9 @@ test('real isolated tmux: detect agent, source config, switch client to pane', {
     assert.equal(result.sessions[0].phase, 'permission');
 
     const configPath = join(directory, 'monitor.conf');
-    await writeFile(configPath, tmuxConfig(resolve('bin/tmux-ai-monitor.mjs'), process.execPath, socket));
+    await writeFile(configPath, tmuxConfig(resolve('bin/tmux-ai-monitor.mjs'), process.execPath, socket).replace('usage-statusline', 'usage-statusline --demo'));
     await run(['source-file', configPath]);
-    assert.match(await run(['show-option', '-gv', 'status-right']), /statusline/);
+    assert.match(await run(['show-option', '-gv', 'status-format[1]']), /usage-statusline/);
     assert.match(await run(['list-keys', '-T', 'prefix', 'a']), /display-popup/);
 
     await run(['new-session', '-d', '-s', 'other']);

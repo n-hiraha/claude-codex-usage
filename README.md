@@ -66,7 +66,11 @@ cat tmux-ai-monitor.conf
 tmux source-file "$PWD/tmux-ai-monitor.conf"
 ```
 
-右側ステータスバーにAI数・ペインID・プロジェクト名・推定状態が表示されます。`prefix + a`でライブ一覧をポップアップ表示します。生成した設定は`status-right`、`status-right-length`、`status-interval`、`prefix + a`を設定します。既存設定と統合したい場合は読み込む前に編集してください。ホームの設定ファイルを自動変更する処理はありません。
+最下部の2行目にCodexの使用量ゲージ・残り％・リセットまでの時間が表示されます。塗られた部分が使用済みです。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-interval`、`prefix + a`を設定します。既存の2行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
+
+ゲージは通常60秒に一度Codexへ取得し、表示にはキャッシュを利用します。キャッシュにはアカウントの表示名と利用枠だけを保存し、メールアドレスやトークン履歴は保存しません。保存先は`$XDG_CACHE_HOME/tmux-ai-monitor`、未指定なら`~/.cache/tmux-ai-monitor`です。再取得中の古い値には更新待ちを示す表示が付きます。取得できない場合に0%と表示することはありません。
+
+複数アカウントをバーに載せる場合は、生成した設定内の`usage-statusline`コマンドへ`--accounts /absolute/path/to/accounts.local.json`を追加してください。画面幅に収まらない分は省略数を表示します。
 
 常用する場合は、生成したファイルの絶対パスを使い、`~/.tmux.conf`に`source-file /absolute/path/tmux-ai-monitor.conf`を追加できます。解除時はその行を削除し、従来のバー設定・キー設定を再適用してください。ポップアップにはtmux 3.2以上が必要です。
 

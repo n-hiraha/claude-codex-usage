@@ -11,6 +11,7 @@ const help = `tmux-ai-monitor — ローカルのAIセッションを見渡す
   attention [--json]    承認待ち・入力待ちを表示
   watch                2秒ごとに更新（1〜9で移動、qで終了）
   statusline           tmuxのstatus-right用の1行
+  usage-statusline     tmux用の使用量ゲージ（60秒キャッシュ）
   usage [--accounts FILE] アカウント別の利用枠・トークン使用量
   jump %ID             指定ペインに移動（tmux内で実行）
   setup tmux           設定を標準出力へ生成
@@ -32,8 +33,8 @@ async function main() {
   const positional = [];
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
-    if (['--demo', '--json', '--attention', '--bell'].includes(arg)) options[arg.slice(2)] = true;
-    else if (['--socket', '--client', '--interval', '--agent', '--accounts'].includes(arg)) {
+    if (['--demo', '--json', '--attention', '--bell', '--compact'].includes(arg)) options[arg.slice(2)] = true;
+    else if (['--socket', '--client', '--interval', '--agent', '--accounts', '--width'].includes(arg)) {
       if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error(`${arg} の値が必要です。`);
       options[arg.slice(2)] = args[++i];
     } else if (arg.startsWith('-')) throw new Error(`不明なオプション: ${arg}`);
@@ -43,6 +44,18 @@ async function main() {
   if (options.agent && !['claude', 'codex', 'gemini'].includes(options.agent)) throw new Error('--agent は claude / codex / gemini を指定してください。');
   if (options.bell && command !== 'watch') throw new Error('--bell は watch で使用してください。');
   let attention = command === 'attention' || Boolean(options.attention);
+  if (command === 'usage-statusline') {
+    const width = Number(options.width ?? 100);
+    if (!Number.isInteger(width) || width < 20 || width > 10000) throw new Error('--widthは20〜10000の整数で指定してください。');
+    const { loadAccounts, demoUsage } = await import('../src/accounts.mjs');
+    const { cachedUsage } = await import('../src/usage-cache.mjs');
+    const { renderUsageGauge } = await import('../src/usage-gauge.mjs');
+    try {
+      const result = options.demo ? demoUsage() : await cachedUsage(await loadAccounts(options.accounts));
+      console.log(result.loading ? 'Codex usage 取得中…' : renderUsageGauge(result, { width, stale: result.stale }));
+    } catch { console.log('Codex usage 取得不可 · usage コマンドで確認'); }
+    return;
+  }
   if (command === 'usage') {
     if (positional.length) throw new Error('使い方: usage [--accounts FILE] [--json] [--demo]');
     const { loadAccounts, collectUsage, demoUsage, renderUsage } = await import('../src/accounts.mjs');
@@ -67,7 +80,7 @@ async function main() {
   const selectedSessions = result => filterSessions(result.sessions, { agent: options.agent, attention });
   const output = result => options.json
     ? JSON.stringify({ ...result, sessions: selectedSessions(result) }, null, 2)
-    : command === 'statusline' ? (result.warnings.length && !result.sessions.length && !options.demo ? 'AI · unavailable' : statusline(selectedSessions(result)))
+    : command === 'statusline' ? (result.warnings.length && !result.sessions.length && !options.demo ? 'AI · unavailable' : statusline(selectedSessions(result), { compact: options.compact }))
     : renderStatus(result, { attention, agent: options.agent });
   if (command !== 'watch') return console.log(output(await read()));
   const seconds = Number(options.interval ?? 2);
