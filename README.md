@@ -100,4 +100,4 @@ RUN_TMUX_TESTS=1 node --test test/tmux.integration.test.mjs
 
 `src/scanner.mjs`がtmuxとOSプロセスを収集し、`src/display.mjs`が表示、`src/integration.mjs`が設定生成とペイン移動を担当します。
 
-Codex usageは合成レスポンスによるプロトコルテストと、Codex CLI 0.153.4の未ログインの一時ホームで接続確認を実施しています。実アカウントでのusage取得と複数アカウントの運用検証は未実施です。
+Codex usageは合成レスポンスによるプロトコルテストと、Codex CLI 0.153.4の未ログインの一時ホームで接続確認を実施しています。macOSの実環境でtmux内の8セッションの検出、および1アカウントの利用枠・リセット時刻・トークン使用量の取得も確認しました。複数アカウントの同時運用は合成レスポンスでの検証までです。
