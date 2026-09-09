@@ -8,7 +8,34 @@ This is a small, standard-library-only Go CLI for monitoring Claude Code, Codex,
 
 上の画像は各枠を見やすく展開した説明図（サンプル値）です。実際のtmuxではCodexとClaudeをそれぞれ1行にまとめます。ゲージの塗りつぶしが残りの利用枠です。使うほど短くなります。`7d`は7日枠を表し、取得できる場合は次回リセット日時（例：`↻9/16 18:00`）も表示します。色だけに頼らず、`残り○%`を文字でも表示します。残り20%以下は赤、50%以下は黄、それ以外は緑です。同じアカウントの色は表示中の最も残りが少ない枠に合わせます。
 
-## 起動
+## インストール（Mac・Linux）
+
+次のコマンドで最新版をインストールできます。OS・CPUを自動判別し、SHA256チェックサムを検証して`~/.local/bin`に配置します。`sudo`は不要です。同じコマンドでアップデートできます。
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/n-hiraha/claude-codex-usage/main/scripts/install.sh | sh
+export PATH="$HOME/.local/bin:$PATH"
+
+# ログインなしで表示を試す
+claude-codex-usage usage --demo
+MONITOR=claude-codex-usage
+```
+
+別のターミナルでもコマンド名で使うには、`~/.local/bin`がPATHに入っていなければ、上の`export PATH=...`を`~/.zshrc`または`~/.bashrc`にも追加してください。tmux・Codex・Claude CLIは別途必要です。
+
+インストール先・バージョンを指定する場合：
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/n-hiraha/claude-codex-usage/main/scripts/install.sh | INSTALL_DIR="$HOME/.local/bin" VERSION=0.4.1 sh
+```
+
+設定例は次のコマンドで取得できます（未作成の場合に実行）。
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/n-hiraha/claude-codex-usage/main/accounts.example.json -o accounts.example.json
+```
+
+## 手動ダウンロード・ソースからのビルド
 
 [Releases](https://github.com/n-hiraha/claude-codex-usage/releases/latest)からOS・CPUに合ったファイルをダウンロードして展開すると、実行ファイル1つで使えます。**実行時にGoやNode.jsは不要です。** tmuxと、使用量を取得するCodex・Claude CLIは別途必要です。
 
@@ -92,7 +119,7 @@ CODEX_HOME=/absolute/path/to/codex-second codex -c cli_auth_credentials_store='f
 
 ```sh
 # 設定ファイルをこのフォルダに生成して内容を確認
-./dist/claude-codex-usage setup tmux --split-providers --accounts "$PWD/accounts.local.json" > tmux-ai-monitor.conf
+$MONITOR setup tmux --split-providers --accounts "$PWD/accounts.local.json" > tmux-ai-monitor.conf
 cat tmux-ai-monitor.conf
 
 # tmux内で設定を読み込む
