@@ -1,0 +1,16 @@
+{
+  "accounts": [
+    {
+      "name": "personal",
+      "provider": "codex",
+      "codexHome": "/absolute/path/to/personal-codex-home",
+      "expectedEmail": "personal@example.com"
+    },
+    {
+      "name": "work",
+      "provider": "codex",
+      "codexHome": "/absolute/path/to/work-codex-home",
+      "expectedEmail": "work@example.com"
+    }
+  ]
+}

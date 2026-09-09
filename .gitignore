@@ -1,0 +1,8 @@
+node_modules/
+.DS_Store
+coverage/
+accounts.local.json
+*.local.json
+tmux-ai-monitor.conf
+.env
+.env.*
