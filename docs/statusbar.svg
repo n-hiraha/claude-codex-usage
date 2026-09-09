@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="430" viewBox="0 0 1800 430" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="390" viewBox="0 0 1800 390" role="img" aria-labelledby="title desc">
   <title id="title">claude-codex-usage のステータスバー表示例</title>
   <desc id="desc">tmuxのウィンドウ行、Codexのアカウント別利用枠、ClaudeのAll modelsとFableの利用枠を表示したサンプル</desc>
-  <rect width="1800" height="430" rx="14" fill="#F4F0EA"/>
-  <rect x="24" y="22" width="1752" height="386" rx="10" fill="#fffdf9" stroke="#d8d0c5"/>
+  <rect width="1800" height="390" rx="14" fill="#F4F0EA"/>
+  <rect x="24" y="22" width="1752" height="346" rx="10" fill="#fffdf9" stroke="#d8d0c5"/>
   <g font-family="SFMono-Regular,Menlo,monospace">
     <text x="56" y="67" font-size="26" font-weight="700" fill="#363635">claude-codex-usage  ·  status bar</text>
     <text x="56" y="101" font-size="18" fill="#6b665f">表示例（サンプル値）  ·  次回リセットはローカル時刻</text>
@@ -22,14 +22,11 @@
     <text x="790" y="239" font-size="19" fill="#a16207">使用75%</text><text x="1060" y="239" font-size="19" fill="#363635">↻9/16 18:00</text>
 
     <text x="56" y="287" font-size="21" font-weight="700" fill="#363635">Claude</text>
-    <text x="220" y="287" font-size="19" fill="#363635">All models  ·  5h</text>
-    <rect x="450" y="269" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="269" width="86" height="22" rx="5" fill="#166534"/>
-    <text x="840" y="287" font-size="19" fill="#166534">使用24%</text><text x="1100" y="287" font-size="19" fill="#363635">↻9/9 22:00</text>
-    <text x="220" y="327" font-size="19" fill="#363635">All models  ·  7d</text>
-    <rect x="450" y="309" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="309" width="256" height="22" rx="5" fill="#a16207"/>
-    <text x="840" y="327" font-size="19" fill="#a16207">使用71%</text><text x="1100" y="327" font-size="19" fill="#363635">↻9/16 18:00</text>
-    <text x="220" y="367" font-size="19" fill="#363635">Fable  ·  7d</text>
-    <rect x="450" y="349" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="349" width="144" height="22" rx="5" fill="#166534"/>
-    <text x="840" y="367" font-size="19" fill="#166534">使用40%</text><text x="1100" y="367" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <text x="220" y="287" font-size="19" fill="#363635">All models  ·  7d</text>
+    <rect x="450" y="269" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="269" width="256" height="22" rx="5" fill="#a16207"/>
+    <text x="840" y="287" font-size="19" fill="#a16207">使用71%</text><text x="1100" y="287" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <text x="220" y="327" font-size="19" fill="#363635">Fable  ·  7d</text>
+    <rect x="450" y="309" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="309" width="144" height="22" rx="5" fill="#166534"/>
+    <text x="840" y="327" font-size="19" fill="#166534">使用40%</text><text x="1100" y="327" font-size="19" fill="#363635">↻9/16 18:00</text>
   </g>
 </svg>

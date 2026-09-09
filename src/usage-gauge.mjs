@@ -69,7 +69,7 @@ function renderAccount(account, { now }) {
   const limit = bucket(account);
   const isClaude = account?.provider === 'claude';
   const fable = isClaude ? account?.limits?.find(item => item.id === 'claude_fable') : null;
-  const groups = isClaude ? [{ name: 'All models', limit }, { name: 'Fable', limit: fable }] : [{ name: '', limit }];
+  const groups = isClaude ? [{ name: 'All models', limit: { secondary: limit?.secondary } }, { name: 'Fable', limit: { secondary: fable?.secondary } }] : [{ name: '', limit }];
   const windows = groups.flatMap(group => [group.limit?.primary, group.limit?.secondary].filter(Boolean));
   const label = accountLabel(account);
   if (account?.error || !windows.length) return { variants: [`${label} 利用枠不明`, `${account?.provider === 'claude' ? 'Claude' : 'Codex'} 不明`], color: COLORS.unknown };

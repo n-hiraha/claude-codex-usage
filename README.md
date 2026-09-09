@@ -4,7 +4,7 @@ tmuxで動かしているClaude Code・Codex・Geminiの状態と、複数アカ
 
 ![claude-codex-usage ステータスバーの表示例](docs/statusbar.svg)
 
-上の画像は各枠を見やすく展開した説明図（サンプル値）です。実際のtmuxではCodexとClaudeをそれぞれ1行にまとめます。ゲージの塗りつぶしが使用済み、背景部分が残りです。`5h`は5時間枠、`7d`は7日枠を表し、取得できる場合は次回リセット日時（例：`↻9/16 18:00`）も表示します。色だけに頼らず、`使用`（使用済み）を文字でも表示します。
+上の画像は各枠を見やすく展開した説明図（サンプル値）です。実際のtmuxではCodexとClaudeをそれぞれ1行にまとめます。ゲージの塗りつぶしが使用済み、背景部分が残りです。`7d`は7日枠を表し、取得できる場合は次回リセット日時（例：`↻9/16 18:00`）も表示します。色だけに頼らず、`使用`（使用済み）を文字でも表示します。
 
 ## 起動
 
@@ -70,7 +70,7 @@ CODEX_HOME=/absolute/path/to/codex-second codex -c cli_auth_credentials_store='f
 - 古いCLIやAPIキーのみの認証など、取得できない項目は不明・取得不可として扱います。0%とは表示しません。
 - アカウントとペインの対応づけは未実装です。Geminiのアカウント別利用枠、ログイン切り替え履歴、別Macのusageの集約も未対応です。
 - `accounts.local.json`はGit対象外です。公開用の設定例には架空のパスとメールだけを載せています。
-- Claudeの利用枠は`claudeHome`ごとに5時間枠・7日枠を表示します。Claude側が提供する場合は、レスポンスの`limits`にある`scope.model.display_name`が`Fable`の、サーバーが返した週次（7日）枠も`Fable`専用として表示します。Fableを提供していないClaudeアカウントでは、その枠を0%として補いません。
+- `usage`コマンドはClaudeの利用枠を`claudeHome`ごとに5時間枠・7日枠で表示し、tmuxバーには週次枠だけを表示します。Claude側が提供する場合は、レスポンスの`limits`にある`scope.model.display_name`が`Fable`の、サーバーが返した週次（7日）枠も`Fable`専用として表示します。Fableを提供していないClaudeアカウントでは、その枠を0%として補いません。
 
 ## tmuxバーへの組み込み
 
@@ -83,7 +83,7 @@ cat tmux-ai-monitor.conf
 tmux source-file "$PWD/tmux-ai-monitor.conf"
 ```
 
-3行構成では、1行目にtmuxのウィンドウ名や時計、2行目にCodex、3行目にClaudeの利用枠を表示します。Codexの行にはアカウント別ゲージ、Claudeの行には`All models`（全モデル共通）と`Fable`（Fable専用）を表示します。`All models`の7日枠はWebに表示される週次枠、5時間枠は別のセッション枠です。塗られた部分が使用済み、背景部分が残りです。取得できる場合は次回リセットの日時も表示します。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-format[2]`、`status-interval`、`prefix + a`を設定します。既存の2・3行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
+3行構成では、1行目にtmuxのウィンドウ名や時計、2行目にCodex、3行目にClaudeの利用枠を表示します。Codexの行にはアカウント別ゲージ、Claudeの行には`All models`（全モデル共通）と`Fable`（Fable専用）を表示します。ClaudeのバーはWebの週次枠に対応する`All models`と`Fable`のみを表示し、現在のセッション（5時間枠）は省略します。塗られた部分が使用済み、背景部分が残りです。取得できる場合は次回リセットの日時も表示します。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-format[2]`、`status-interval`、`prefix + a`を設定します。既存の2・3行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
 
 生成した設定を読み込んだ後はtmuxの再起動は不要です。`tmux source-file /absolute/path/to/tmux-ai-monitor.conf`を実行すると現在のサーバーに反映されます。AIセッション一覧は`prefix + a`で開きます。
 
@@ -127,7 +127,7 @@ Codex usageは合成レスポンスによるプロトコルテストと、Codex 
 
 ## Claudeの利用枠
 
-設定に`provider: "claude"`と`claudeHome`（Claude Codeの設定ディレクトリの絶対パス）を追加すると、Claude.aiの5時間枠と週次枠を表示します。`expectedEmail`でアカウントの取り違えを検出できます。Claude Codeにサブスクリプションアカウントでログインしている必要があります。APIキーの使用量・請求額は対象外です。
+設定に`provider: "claude"`と`claudeHome`（Claude Codeの設定ディレクトリの絶対パス）を追加すると、Claude.aiの利用枠を取得します。tmuxバーには週次枠のみ、`usage`コマンドには5時間枠と週次枠を表示します。`expectedEmail`でアカウントの取り違えを検出できます。Claude Codeにサブスクリプションアカウントでログインしている必要があります。APIキーの使用量・請求額は対象外です。
 
 認証状態は`claude auth status --json`で確認します。macOSでは選択したプロファイルのClaude Code用Keychain項目、その他の環境ではそのホームの`.credentials.json`にあるOAuth認証情報を使用します。認証トークンはメモリ内でのみ扱い、固定の`https://api.anthropic.com/api/oauth/usage`へ送信します。トークンの保存・表示・自動更新はしません。認証が切れた場合はClaude Codeでログインし直してください。
 

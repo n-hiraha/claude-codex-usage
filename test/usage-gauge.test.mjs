@@ -8,7 +8,8 @@ test('Claude shows separate All models and Fable gauges', () => {
     { id: 'claude_fable', secondary: { usedPercent: 63, windowDurationMins: 10080 } },
   ] }] };
   const output = renderUsageGauge(result, { width: 180 });
-  assert.match(output, /All models.*使用24%.*使用71%.*Fable.*使用63%/);
+  assert.match(output, /All models.*使用71%.*Fable.*使用63%/);
+  assert.doesNotMatch(output, /5h|使用24%/);
   result.accounts[0].limits.pop();
   assert.match(renderUsageGauge(result, { width: 180 }), /Fable 未提供/);
 });
@@ -56,7 +57,7 @@ test('small widths collapse accounts and sanitize control/format injection', () 
 test('renders Claude labels and selects the Claude limit bucket', () => {
   const output = renderUsageGauge({ accounts: [{ name: 'default', provider: 'claude', limits: [
     { id: 'codex', primary: { usedPercent: 99, windowDurationMins: 60 } },
-    { id: 'claude', primary: { usedPercent: 20, windowDurationMins: 300 } },
+    { id: 'claude', secondary: { usedPercent: 20, windowDurationMins: 10080 } },
   ] }] }, { now: 1759481600000 });
   assert.match(output, /Claude/);
   assert.match(output, /使用20%/);
