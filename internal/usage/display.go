@@ -119,12 +119,13 @@ func windowText(w *Window, now time.Time, size int, reset bool) string {
 	if w == nil {
 		return ""
 	}
-	gauge, pct := "[不明]", "使用?"
+	gauge, pct := "[不明]", "残り?"
 	if finite(w.UsedPercent) {
 		used := math.Max(0, math.Min(100, *w.UsedPercent))
-		fill := int(math.Round(used / 100 * float64(size)))
+		remaining := 100 - used
+		fill := int(math.Round(remaining / 100 * float64(size)))
 		gauge = "[" + strings.Repeat("━", fill) + strings.Repeat("·", size-fill) + "]"
-		pct = fmt.Sprintf("使用%.0f%%", used)
+		pct = fmt.Sprintf("残り%.0f%%", remaining)
 	}
 	label := durationLabel(w.WindowDurationMins)
 	if label != "" {
@@ -216,9 +217,9 @@ func gaugeAccount(a AccountUsage, now time.Time) gaugeItem {
 			max = math.Max(max, *w.UsedPercent)
 		}
 	}
-	if max > 80 {
+	if max >= 80 {
 		item.color = "#b91c1c"
-	} else if max > 50 || !known {
+	} else if max >= 50 || !known {
 		item.color = "#a16207"
 	}
 	for _, v := range []struct {

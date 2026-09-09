@@ -5,28 +5,28 @@
   <rect x="24" y="22" width="1752" height="346" rx="10" fill="#fffdf9" stroke="#d8d0c5"/>
   <g font-family="SFMono-Regular,Menlo,monospace">
     <text x="56" y="67" font-size="26" font-weight="700" fill="#363635">claude-codex-usage  ·  status bar</text>
-    <text x="56" y="101" font-size="18" fill="#6b665f">表示例（サンプル値）  ·  次回リセットはローカル時刻</text>
-    <circle cx="1249" cy="61" r="6" fill="#166534"/><text x="1262" y="67" font-size="16" fill="#6b665f">低</text>
+    <text x="56" y="101" font-size="18" fill="#6b665f">表示例（サンプル値）  ·  塗りつぶし＝残り利用枠  ·  リセットはローカル時刻</text>
+    <circle cx="1249" cy="61" r="6" fill="#166534"/><text x="1262" y="67" font-size="16" fill="#6b665f">余裕</text>
     <circle cx="1307" cy="61" r="6" fill="#a16207"/><text x="1320" y="67" font-size="16" fill="#6b665f">注意</text>
-    <circle cx="1380" cy="61" r="6" fill="#b91c1c"/><text x="1393" y="67" font-size="16" fill="#6b665f">高</text>
+    <circle cx="1380" cy="61" r="6" fill="#b91c1c"/><text x="1393" y="67" font-size="16" fill="#6b665f">残少</text>
 
     <rect x="48" y="123" width="1704" height="42" rx="6" fill="#363635"/>
     <text x="68" y="151" font-size="20" fill="#F4F0EA">0:main  1:api  2:shell</text><text x="1500" y="151" font-size="20" fill="#F4F0EA">Wed Sep 9 18:00</text>
 
     <text x="56" y="199" font-size="21" font-weight="700" fill="#363635">Codex</text>
     <text x="220" y="199" font-size="20" fill="#363635">main  ·  7d</text>
-    <rect x="400" y="181" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="400" y="181" width="72" height="22" rx="5" fill="#166534"/>
-    <text x="790" y="199" font-size="19" fill="#166534">使用20%</text><text x="1060" y="199" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <rect x="400" y="181" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="400" y="181" width="288" height="22" rx="5" fill="#166534"/>
+    <text x="790" y="199" font-size="19" fill="#166534">残り80%</text><text x="1060" y="199" font-size="19" fill="#363635">↻9/16 18:00</text>
     <text x="220" y="239" font-size="20" fill="#363635">second  ·  7d</text>
-    <rect x="400" y="221" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="400" y="221" width="270" height="22" rx="5" fill="#a16207"/>
-    <text x="790" y="239" font-size="19" fill="#a16207">使用75%</text><text x="1060" y="239" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <rect x="400" y="221" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="400" y="221" width="90" height="22" rx="5" fill="#a16207"/>
+    <text x="790" y="239" font-size="19" fill="#a16207">残り25%</text><text x="1060" y="239" font-size="19" fill="#363635">↻9/16 18:00</text>
 
     <text x="56" y="287" font-size="21" font-weight="700" fill="#363635">Claude</text>
     <text x="220" y="287" font-size="19" fill="#363635">All models  ·  7d</text>
-    <rect x="450" y="269" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="269" width="256" height="22" rx="5" fill="#a16207"/>
-    <text x="840" y="287" font-size="19" fill="#a16207">使用71%</text><text x="1100" y="287" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <rect x="450" y="269" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="269" width="104" height="22" rx="5" fill="#a16207"/>
+    <text x="840" y="287" font-size="19" fill="#a16207">残り29%</text><text x="1100" y="287" font-size="19" fill="#363635">↻9/16 18:00</text>
     <text x="220" y="327" font-size="19" fill="#363635">Fable  ·  7d</text>
-    <rect x="450" y="309" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="309" width="144" height="22" rx="5" fill="#166534"/>
-    <text x="840" y="327" font-size="19" fill="#166534">使用40%</text><text x="1100" y="327" font-size="19" fill="#363635">↻9/16 18:00</text>
+    <rect x="450" y="309" width="360" height="22" rx="5" fill="#e2ddd5"/><rect x="450" y="309" width="216" height="22" rx="5" fill="#166534"/>
+    <text x="840" y="327" font-size="19" fill="#166534">残り60%</text><text x="1100" y="327" font-size="19" fill="#363635">↻9/16 18:00</text>
   </g>
 </svg>

@@ -6,7 +6,7 @@ This is a small, standard-library-only Go CLI for monitoring Claude Code, Codex,
 
 ![claude-codex-usage ステータスバーの表示例](docs/statusbar.svg)
 
-上の画像は各枠を見やすく展開した説明図（サンプル値）です。実際のtmuxではCodexとClaudeをそれぞれ1行にまとめます。ゲージの塗りつぶしが使用済み、背景部分が残りです。`7d`は7日枠を表し、取得できる場合は次回リセット日時（例：`↻9/16 18:00`）も表示します。色だけに頼らず、`使用`（使用済み）を文字でも表示します。
+上の画像は各枠を見やすく展開した説明図（サンプル値）です。実際のtmuxではCodexとClaudeをそれぞれ1行にまとめます。ゲージの塗りつぶしが残りの利用枠です。使うほど短くなります。`7d`は7日枠を表し、取得できる場合は次回リセット日時（例：`↻9/16 18:00`）も表示します。色だけに頼らず、`残り○%`を文字でも表示します。残り20%以下は赤、50%以下は黄、それ以外は緑です。同じアカウントの色は表示中の最も残りが少ない枠に合わせます。
 
 ## 起動
 
@@ -99,7 +99,7 @@ cat tmux-ai-monitor.conf
 tmux source-file "$PWD/tmux-ai-monitor.conf"
 ```
 
-3行構成では、1行目にtmuxのウィンドウ名や時計、2行目にCodex、3行目にClaudeの利用枠を表示します。Codexの行にはアカウント別ゲージ、Claudeの行には`All models`（全モデル共通）と`Fable`（Fable専用）を表示します。ClaudeのバーはWebの週次枠に対応する`All models`と`Fable`のみを表示し、現在のセッション（5時間枠）は省略します。塗られた部分が使用済み、背景部分が残りです。取得できる場合は次回リセットの日時も表示します。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-format[2]`、`status-interval`、`prefix + a`を設定します。既存の2・3行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
+3行構成では、1行目にtmuxのウィンドウ名や時計、2行目にCodex、3行目にClaudeの利用枠を表示します。Codexの行にはアカウント別ゲージ、Claudeの行には`All models`（全モデル共通）と`Fable`（Fable専用）を表示します。ClaudeのバーはWebの週次枠に対応する`All models`と`Fable`のみを表示し、現在のセッション（5時間枠）は省略します。塗られた部分が残りの利用枠で、使うほど短くなります。取得できる場合は次回リセットの日時も表示します。元のCPU・時計などの右側バーは維持します。`prefix + a`でAIセッションのライブ一覧をポップアップ表示します。生成した設定は`status`、`status-position`、`status-format[1]`、`status-format[2]`、`status-interval`、`prefix + a`を設定します。既存の2・3行目がある場合は読み込む前に統合してください。設定生成コマンド自身はホームの設定を変更しません。
 
 設定生成時にCodex・Claude CLIの実行ファイルのパスを解決して埋め込むため、tmuxの古いPATHでも利用できます。必要なら`--codex-bin /absolute/path/to/codex`・`--claude-bin /absolute/path/to/claude`で指定できます。
 

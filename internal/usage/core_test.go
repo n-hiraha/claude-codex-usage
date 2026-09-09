@@ -98,12 +98,12 @@ func TestGaugeWeeklyClaudeAndReset(t *testing.T) {
 	reset := float64(now.Add(6 * time.Hour).Unix())
 	result := Result{Accounts: []AccountUsage{{Name: "claude", Provider: "claude", Limits: []Limit{{ID: "claude", Primary: &Window{UsedPercent: Number(24), WindowDurationMins: Number(300)}, Secondary: &Window{UsedPercent: Number(71), WindowDurationMins: Number(10080), ResetsAt: &reset}}, {ID: "claude_fable", Secondary: &Window{UsedPercent: Number(63), WindowDurationMins: Number(10080), ResetsAt: &reset}}}}}}
 	out := RenderGauge(result, 223, now)
-	for _, s := range []string{"All models", "使用71%", "Fable", "使用63%", "↻9/9 18:00"} {
+	for _, s := range []string{"All models", "残り29%", "Fable", "残り37%", "↻9/9 18:00"} {
 		if !strings.Contains(out, s) {
 			t.Errorf("missing %s: %s", s, out)
 		}
 	}
-	if strings.Contains(out, "5h") || strings.Contains(out, "使用24%") {
+	if strings.Contains(out, "5h") || strings.Contains(out, "残り76%") {
 		t.Fatal("session quota shown")
 	}
 	result.Accounts[0].Limits = result.Accounts[0].Limits[:1]
@@ -135,5 +135,28 @@ func TestGaugeWidthsAndSanitization(t *testing.T) {
 		if strings.Contains(s, "#(touch") || strings.Contains(s, "SECRET") || strings.ContainsAny(s, "\x1b\n") {
 			t.Fatal("terminal injection")
 		}
+	}
+}
+
+func TestRemainingGaugeEndpointsAndColors(t *testing.T) {
+	for _, tc := range []struct {
+		used              float64
+		gauge, pct, color string
+	}{
+		{0, "[━━━━━━━━━━]", "残り100%", "#166534"},
+		{100, "[··········]", "残り0%", "#b91c1c"},
+		{80, "[━━········]", "残り20%", "#b91c1c"},
+		{50, "[━━━━━·····]", "残り50%", "#a16207"},
+	} {
+		r := Result{Accounts: []AccountUsage{{Name: "main", Provider: "codex", Limits: []Limit{{ID: "codex", Primary: &Window{UsedPercent: Number(tc.used)}}}}}}
+		s := RenderGauge(r, 223, time.Now())
+		for _, expected := range []string{tc.gauge, tc.pct, tc.color} {
+			if !strings.Contains(s, expected) {
+				t.Fatalf("used=%g expected %s: %s", tc.used, expected, s)
+			}
+		}
+	}
+	if s := windowText(&Window{}, time.Now(), 10, false); !strings.Contains(s, "残り?") || strings.Contains(s, "残り100%") {
+		t.Fatalf("unknown quota misrepresented: %s", s)
 	}
 }

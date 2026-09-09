@@ -18,12 +18,12 @@ import (
 	"github.com/n-hiraha/claude-codex-usage/internal/usage"
 )
 
-var version = "0.4.0"
+var version = "0.4.1"
 
 const help = `claude-codex-usage — Claude・Codexの使用量とリセット日時（Go版）
 
   usage                アカウント別の利用枠・トークン使用量
-  usage-statusline     tmux用の使用量ゲージ
+  usage-statusline     tmux用の残り利用枠ゲージ
   setup tmux           設定を標準出力へ生成
   status               AIセッション一覧
   attention            承認待ち・入力待ち
@@ -158,7 +158,7 @@ func config(o options, executable string) (string, error) {
 	if o.values["--socket"] != "" {
 		watch += " --socket " + shellQuote(o.values["--socket"])
 	}
-	lines = append(lines, "bind-key a display-popup -E -w 90% -h 80% "+configQuote(watch), "# Filled gauge = used quota. Reset times use this computer's timezone.", "# Existing status-right (CPU / clock) is preserved. No tmux restart needed.")
+	lines = append(lines, "bind-key a display-popup -E -w 90% -h 80% "+configQuote(watch), "# Filled gauge = remaining quota. Reset times use this computer's timezone.", "# Existing status-right (CPU / clock) is preserved. No tmux restart needed.")
 	return strings.Join(lines, "\n") + "\n", nil
 }
 func run(ctx context.Context, args []string) error {
