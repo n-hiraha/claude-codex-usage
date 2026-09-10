@@ -18,7 +18,7 @@ import (
 	"github.com/n-hiraha/claude-codex-usage/internal/usage"
 )
 
-var version = "0.5.0"
+var version = "0.5.1"
 
 const help = `claude-codex-usage — Claude・Codexの使用量とリセット日時（Go版）
 

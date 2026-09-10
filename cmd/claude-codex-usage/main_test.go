@@ -107,7 +107,7 @@ func TestWaitingBordersIntegration(t *testing.T) {
 	}
 	tm("source-file", file)
 	tm("source-file", file)
-	for _, tc := range []struct{ state, color, label string }{{"reply", "#ef4444", "返答待ち"}, {"approval", "#f59e0b", "承認待ち"}, {"", "green", "pane 0"}} {
+	for _, tc := range []struct{ state, color, label string }{{"reply", "#ffffff", "返答待ち"}, {"approval", "#111111", "承認してください"}, {"", "green", "pane 0"}} {
 		tm("set", "-p", "-t", pane, "@ccu_waiting", tc.state)
 		style := tm("display-message", "-p", "-t", pane, "#{E:pane-active-border-style}")
 		if !strings.Contains(style, "fg="+tc.color) || !strings.Contains(style, "bg=#F4F0EA") {
