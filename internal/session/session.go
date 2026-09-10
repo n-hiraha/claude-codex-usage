@@ -205,40 +205,6 @@ func stripVT(s string) string {
 	}
 	return out.String()
 }
-func InferPhase(capture string) string {
-	lines := strings.Split(stripVT(capture), "\n")
-	var x []string
-	for _, l := range lines {
-		if strings.TrimSpace(l) != "" {
-			x = append(x, l)
-		}
-	}
-	if len(x) > 12 {
-		x = x[len(x)-12:]
-	}
-	for i := len(x) - 1; i >= 0; i-- {
-		l := x[i]
-		if regexp.MustCompile(`(?i)^\s*(thinking|reasoning|working)(\s*\([^\n]*\))?[.… ]*$`).MatchString(l) {
-			return "thinking"
-		}
-		if regexp.MustCompile(`(?i)(^|\s)([⏺●▶▸]|[-*])\s*(tool|running|executing)\b|\b(running|executing)\s+(command|tool)\b`).MatchString(l) {
-			return "tool"
-		}
-		if regexp.MustCompile(`(?i)^\s*(approval:\s*)?(would you like to proceed\?|(?:do you want|would you like) to (run|execute|allow)\b.*\?|allow (this|the)\b[^\n]*\?|approve (this|the)\b[^\n]*\?)`).MatchString(l) {
-			return "permission"
-		}
-		if regexp.MustCompile(`(?i)^\s*(done|finished|completed|idle)\s*[.!]?\s*$`).MatchString(l) {
-			return "done"
-		}
-	}
-	for _, line := range x {
-		if regexp.MustCompile(`^\s*[❯›>]\s*$`).MatchString(line) {
-			return "done"
-		}
-	}
-	return "unknown"
-}
-
 func tmuxArgs(socket string) []string {
 	if socket != "" {
 		return []string{"-L", socket}
@@ -382,7 +348,7 @@ func Scan(ctx context.Context, socket string) Result {
 }
 func rank(p string) int {
 	switch p {
-	case "permission":
+	case "permission", "input":
 		return 0
 	case "thinking":
 		return 1
@@ -406,7 +372,7 @@ func TmuxText(s string) string { return strings.NewReplacer("#", "＃", "%", "�
 func Filter(s []Session, agent string, attention bool) []Session {
 	r := []Session{}
 	for _, x := range s {
-		if (agent == "" || x.Agent == agent) && (!attention || x.Phase == "permission" || x.Phase == "done") {
+		if (agent == "" || x.Agent == agent) && (!attention || x.Phase == "permission" || x.Phase == "input" || x.Phase == "done") {
 			r = append(r, x)
 		}
 	}
@@ -436,14 +402,14 @@ func Statusline(s []Session, compact bool) string {
 		if i >= 5 {
 			break
 		}
-		icon := map[string]string{"permission": "!", "thinking": "~", "tool": ">", "done": "+", "unknown": "?"}[x.Phase]
+		icon := map[string]string{"permission": "!", "input": "!", "thinking": "~", "tool": ">", "done": "+", "unknown": "?"}[x.Phase]
 		if icon == "" {
 			icon = "?"
 		}
 		if i > 0 {
 			pills += "  "
 		}
-		pills += fmt.Sprintf("#[fg=%s]%s %s %s#[default]", map[string]string{"permission": "yellow", "thinking": "cyan", "tool": "blue", "done": "green", "unknown": "white"}[x.Phase], icon, TmuxText(x.PaneID), shortProject(x.Project))
+		pills += fmt.Sprintf("#[fg=%s]%s %s %s#[default]", map[string]string{"permission": "yellow", "input": "red", "thinking": "cyan", "tool": "blue", "done": "green", "unknown": "white"}[x.Phase], icon, TmuxText(x.PaneID), shortProject(x.Project))
 	}
 	return "AI " + strings.Join(counts, " · ") + " │ " + pills
 }
@@ -461,7 +427,7 @@ func min(a, b int) int {
 	return b
 }
 func phaseLabel(s string) string {
-	if v, ok := map[string]string{"permission": "承認待ち", "thinking": "応答中", "tool": "ツール実行", "done": "入力待ち", "unknown": "不明"}[s]; ok {
+	if v, ok := map[string]string{"permission": "承認待ち", "input": "返答待ち", "thinking": "応答中", "tool": "ツール実行", "done": "入力待ち", "unknown": "不明"}[s]; ok {
 		return v
 	}
 	return "不明"
@@ -486,7 +452,7 @@ func RenderStatus(r Result, attention bool, agent string) string {
 	}
 	lines := []string{"CLAUDE CODEX USAGE", fmt.Sprintf("%s sessions · %s · 状態は画面からの推定", count, time.Now().Format("15:04:05")), ""}
 	for i, s := range ss {
-		icon := map[string]string{"permission": "!", "thinking": "~", "tool": ">", "done": "+", "unknown": "?"}[s.Phase]
+		icon := map[string]string{"permission": "!", "input": "!", "thinking": "~", "tool": ">", "done": "+", "unknown": "?"}[s.Phase]
 		lines = append(lines, fmt.Sprintf("%d. %s  %s  %s %s  %s", i+1, Clean(s.PaneID), Clean(s.Agent), icon, phaseLabel(s.Phase)+ageLabel(s.PhaseSince, s.PhaseAgeSeconds), Clean(s.Project)), fmt.Sprintf("    %s:%d.%d  CPU %.1f%%  MEM %.0f MB", Clean(s.SessionName), s.WindowIndex, s.PaneIndex, s.CPU, s.MemoryMB), "    "+Clean(s.CWD))
 	}
 	if len(ss) == 0 {
@@ -519,14 +485,14 @@ func (t *Tracker) Update(r Result, now time.Time) Result {
 		k := fmt.Sprintf("%s:%d:%s", s.PaneID, s.PID, s.Agent)
 		seen[k] = true
 		p := t.states[k]
-		if p.last != "" && s.Phase != p.last && (s.Phase == "permission" || (s.Phase == "done" && (p.last == "thinking" || p.last == "tool"))) {
-			r.Events = append(r.Events, Event{Type: map[bool]string{true: "permission", false: "done"}[s.Phase == "permission"], PaneID: s.PaneID, Agent: s.Agent, Project: s.Project, At: now})
+		if p.last != "" && s.Phase != p.last && (s.Phase == "permission" || s.Phase == "input" || (s.Phase == "done" && (p.last == "thinking" || p.last == "tool"))) {
+			r.Events = append(r.Events, Event{Type: s.Phase, PaneID: s.PaneID, Agent: s.Agent, Project: s.Project, At: now})
 		}
 		if p.phase != s.Phase {
 			p.since = now
 		}
 		p.phase = s.Phase
-		if s.Phase == "permission" || s.Phase == "thinking" || s.Phase == "tool" || s.Phase == "done" {
+		if s.Phase == "permission" || s.Phase == "input" || s.Phase == "thinking" || s.Phase == "tool" || s.Phase == "done" {
 			p.last = s.Phase
 		}
 		t.states[k] = p

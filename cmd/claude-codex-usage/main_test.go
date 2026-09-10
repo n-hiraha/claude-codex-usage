@@ -82,3 +82,43 @@ func TestTmuxConfigIntegration(t *testing.T) {
 		}
 	}
 }
+
+func TestWaitingBordersIntegration(t *testing.T) {
+	if os.Getenv("RUN_TMUX_TESTS") == "" {
+		t.Skip("set RUN_TMUX_TESTS=1")
+	}
+	socket := fmt.Sprintf("ccu-border-%d", os.Getpid())
+	tm := func(args ...string) string {
+		t.Helper()
+		b, e := exec.Command("tmux", append([]string{"-L", socket}, args...)...).CombinedOutput()
+		if e != nil {
+			t.Fatalf("tmux %v: %v %s", args, e, b)
+		}
+		return strings.TrimSpace(string(b))
+	}
+	pane := tm("-f", "/dev/null", "new-session", "-d", "-P", "-F", "#{pane_id}", "-s", "test")
+	defer exec.Command("tmux", "-L", socket, "kill-server").Run()
+	tm("set", "-g", "pane-border-style", "fg=blue,bg=#F4F0EA")
+	tm("set", "-g", "pane-active-border-style", "fg=green,bg=#F4F0EA")
+	tm("set", "-g", "pane-border-format", "pane #{pane_index}")
+	file := filepath.Join(t.TempDir(), "borders.conf")
+	if e := os.WriteFile(file, []byte(strings.Join(borderConfig(), "\n")), 0600); e != nil {
+		t.Fatal(e)
+	}
+	tm("source-file", file)
+	tm("source-file", file)
+	for _, tc := range []struct{ state, color, label string }{{"reply", "#ef4444", "返答待ち"}, {"approval", "#f59e0b", "承認待ち"}, {"", "green", "pane 0"}} {
+		tm("set", "-p", "-t", pane, "@ccu_waiting", tc.state)
+		style := tm("display-message", "-p", "-t", pane, "#{E:pane-active-border-style}")
+		if !strings.Contains(style, "fg="+tc.color) || !strings.Contains(style, "bg=#F4F0EA") {
+			t.Fatalf("style: %q", style)
+		}
+		label := tm("display-message", "-p", "-t", pane, "#{E:pane-border-format}")
+		if !strings.Contains(label, tc.label) {
+			t.Fatalf("label: %q", label)
+		}
+	}
+	if tm("show", "-gv", "@ccu_saved_border_style") != "fg=blue,bg=#F4F0EA" {
+		t.Fatal("reload overwrote original")
+	}
+}

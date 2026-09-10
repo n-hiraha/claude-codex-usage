@@ -119,7 +119,7 @@ CODEX_HOME=/absolute/path/to/codex-second codex -c cli_auth_credentials_store='f
 
 ```sh
 # 設定ファイルをこのフォルダに生成して内容を確認
-$MONITOR setup tmux --split-providers --accounts "$PWD/accounts.local.json" > tmux-ai-monitor.conf
+$MONITOR setup tmux --split-providers --pane-borders --accounts "$PWD/accounts.local.json" > tmux-ai-monitor.conf
 cat tmux-ai-monitor.conf
 
 # tmux内で設定を読み込む
@@ -134,14 +134,35 @@ tmux source-file "$PWD/tmux-ai-monitor.conf"
 
 ゲージはCodexのみなら60秒、Claudeを含む設定では5分に一度取得し、表示にはキャッシュを利用します。キャッシュにはアカウントの表示名と利用枠だけを保存し、メールアドレスやトークン履歴は保存しません。保存先は`$XDG_CACHE_HOME/claude-codex-usage`、未指定なら`~/.cache/claude-codex-usage`です。再取得中の古い値には更新待ちを示す表示が付きます。取得できない値や不明な値を0%として表示することはありません。
 
-複数アカウントをバーに載せる場合は、`setup tmux --split-providers --accounts /absolute/path/to/accounts.local.json`で生成した設定を使ってください。画面幅に収まらない分は省略数を表示します。
+複数アカウントをバーに載せる場合は、`setup tmux --split-providers --pane-borders --accounts /absolute/path/to/accounts.local.json`で生成した設定を使ってください。画面幅に収まらない分は省略数を表示します。
 
 常用する場合は、生成したファイルの絶対パスを使い、`~/.tmux.conf`に`source-file /absolute/path/tmux-ai-monitor.conf`を追加できます。解除時はその行を削除し、従来のバー設定・キー設定を再適用してください。ポップアップにはtmux 3.2以上が必要です。
+
+## 返答・承認待ちを枠の色で見分ける
+
+`setup tmux --pane-borders`で、AIが入力を待っているペインの枠を色分けできます。
+
+- **赤い枠：返答待ち**。応答が終わって入力できる状態、またはCodexが回答待ちの質問を表示している状態です。質問があれば、バックグラウンドで処理中でも赤く表示します。
+- **黄色い枠：承認待ち**。コマンド実行などへの許可を求めています。
+- 処理中・判定不明・通常のシェルは元の枠色を使います。
+
+枠内にも「返答待ち」「承認待ち」と表示します。取得はステータスバーの更新に合わせて約2秒ごとです。tmuxの再起動やAIの再ログインは不要です。判定はペイン画面からの推定なので、表示形式が変わった場合などに見逃すことがあります。会話内容は保存しません。
+
+解除する場合は`--pane-borders`を外して設定ファイルを生成・読み込みし、保存してある元の枠設定を戻します。
+
+```sh
+tmux set-option -gF pane-border-style '#{@ccu_saved_border_style}'
+tmux set-option -gF pane-active-border-style '#{@ccu_saved_active_border_style}'
+tmux set-option -gF pane-border-format '#{@ccu_saved_border_format}'
+tmux set-option -gF pane-border-status '#{@ccu_saved_border_status}'
+tmux set-option -gu @ccu_border_saved
+```
 
 ## 状態と制約
 
 | 表示 | 意味 |
 | --- | --- |
+| ! 返答待ち | Codexの回答待ち質問を検出 |
 | ! 承認待ち | 画面に承認プロンプトを検出 |
 | ~ 応答中 | 生成中の表示を検出 |
 | > ツール実行 | ツール実行の表示を検出 |
@@ -180,4 +201,4 @@ Go版は認証・JSONLプロトコル・キャッシュ・表示・セッショ�
 
 ## JS版からの移行
 
-`accounts.local.json`はそのまま使えます。Go版の実行ファイルで`setup tmux --split-providers --accounts "$PWD/accounts.local.json"`を再実行し、生成した設定を`tmux source-file`で読み込んでください。tmuxの再起動は不要です。既存の`tmux-ai-monitor.conf`というファイル名も引き続き使えます。キャッシュはGo版専用のディレクトリへ切り替わり、初回に再取得します。
+`accounts.local.json`はそのまま使えます。Go版の実行ファイルで`setup tmux --split-providers --pane-borders --accounts "$PWD/accounts.local.json"`を再実行し、生成した設定を`tmux source-file`で読み込んでください。tmuxの再起動は不要です。既存の`tmux-ai-monitor.conf`というファイル名も引き続き使えます。キャッシュはGo版専用のディレクトリへ切り替わり、初回に再取得します。
