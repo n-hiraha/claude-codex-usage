@@ -1,7 +1,7 @@
 package main
 
 func borderConfig() []string {
-	suffix := "#{?#{==:#{@ccu_waiting},reply},#,fg=#ffffff#,bg=#ff3030,#{?#{==:#{@ccu_waiting},approval},#,fg=#111111#,bg=#ffd000,}}"
+	suffix := "#{?#{==:#{@ccu_waiting},reply},#,fg=#ffffff#,bg=#803b46,#{?#{==:#{@ccu_waiting},approval},#,fg=#111111#,bg=#ffd000,}}"
 	return []string{
 		"# Save the existing border appearance once, including theme colours.",
 		"if-shell -F '#{!=:#{@ccu_border_saved},1}' {",
@@ -15,6 +15,6 @@ func borderConfig() []string {
 		"set-option -g pane-border-style " + configQuote("#{@ccu_saved_border_style}"+suffix),
 		"set-option -g pane-active-border-style " + configQuote("#{@ccu_saved_active_border_style}"+suffix),
 		"if-shell -F '#{==:#{pane-border-status},off}' 'set-option -g pane-border-status bottom'",
-		"set-option -g pane-border-format " + configQuote("#{?#{==:#{@ccu_waiting},reply},#[fg=#ffffff#,bg=#ff3030#,bold] ? あなたの返答待ち #[default],#{?#{==:#{@ccu_waiting},approval},#[fg=#111111#,bg=#ffd000#,bold] ! 承認してください #[default],}} #{E:@ccu_saved_border_format}"),
+		"set-option -g pane-border-format " + configQuote("#{?#{==:#{@ccu_waiting},reply},#[fg=#ffffff#,bg=#803b46#,bold] 🐑 返答待ち #[default],#{?#{==:#{@ccu_waiting},approval},#[fg=#111111#,bg=#ffd000#,bold] ! 承認してください #[default],}} #{E:@ccu_saved_border_format}"),
 	}
 }
